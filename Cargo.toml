@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 cpal = "0.14.1"
+buffer = "0.1.9"
+thiserror = "1.0.37"
