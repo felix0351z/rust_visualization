@@ -127,10 +127,10 @@ use std::error::Error;
                     let iter = data.iter().step_by(2).cloned();
                     match buffer_step {
                         false => {
-                            buffer.splice(frame_length.., iter);
+                            buffer.splice(..frame_length, iter);
                         }
                         true => {
-                            buffer.splice(..frame_length, iter);
+                            buffer.splice(frame_length.., iter);
                             callback(buffer.as_slice(), info)
                         }
                     }
