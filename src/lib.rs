@@ -4,20 +4,18 @@ mod input;
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
-    use crate::input::MonoDeviceInputSource;
+    use crate::input::DeviceInputSource;
 
 
     //run with --nocapture to see the output
     #[test]
     fn test_input_speed() {
-        let mut input_source = MonoDeviceInputSource::new();
+        let mut input_source = DeviceInputSource::new();
 
         let start = Instant::now();
         let mut count = 0;
 
-        input_source.build_stream(
-            480,
-            2,
+        input_source.build_mono_stream(
             move |data, info| {
                 //println!("{:?}", data);
                 count+=1;
