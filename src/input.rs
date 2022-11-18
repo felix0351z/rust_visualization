@@ -31,6 +31,20 @@ use std::error::Error;
         NoStereoChannel,
     }
 
+    /// Gives all information needed to buffer audio data.
+    pub  struct BufferInfo {
+        pub frame_length: usize,
+        pub frame_capture_size: usize
+    }
+
+    impl BufferInfo {
+
+        pub fn buffer_size(&self) -> usize {
+            self.frame_length*self.frame_capture_size
+        }
+
+    }
+
 
     /// Describes a device with all necessary information's to decide,
     /// which device should be used.
@@ -66,7 +80,8 @@ use std::error::Error;
 
     impl DeviceInputSource {
 
-        /// Build new InputSource with default audio device.
+        /// Build new InputSource with default audio device
+        /// and automatically select the default input device.
         pub fn new() -> Self {
             let host = cpal::default_host();
             let device = host.default_input_device();
@@ -121,8 +136,26 @@ use std::error::Error;
             Ok(self.device = device)
         }
 
+        pub fn buffer_info(&self) -> Result<BufferInfo, Box<dyn Error>> {
+
+            let config = self.device.as_ref().ok_or(NoDeviceSelected)?
+                .supported_stream_configuration()?;
+
+            // The frame length defines a pack of samples. We need as much frames as in FRAME_RATE declared.
+            // So we split the Samples to the FRAME_RATE
+            let frame_length = (config.sample_rate.0 / CAPTURE_FRAME_RATE) as usize;
+
+            // Frame capture_size defines how many frames will be captured in 1 period
+            // The display rate is set to 100fps and the streaming rate is 50fps. So we need 2 frames for each period.
+            let frame_capture_size = (CAPTURE_FRAME_RATE/DISPLAY_FRAME_RATE) as usize;
+
+            Ok(
+                BufferInfo { frame_length, frame_capture_size }
+            )
+        }
+
         /// Get the current device
-        pub fn current_device(&self) -> Result<&Device, InputSourceError> {
+        fn current_device(&self) -> Result<&Device, InputSourceError> {
             self.device.as_ref().ok_or(NoDeviceSelected)
         }
 
@@ -139,6 +172,7 @@ use std::error::Error;
 
 
         /// Build a new input stream with a fixed configuration, frame_length and frame_capture_size
+        /// Returns the size of one frame
         pub fn build_mono_stream<C, E>(
             &mut self,
             mut callback: C,
@@ -152,19 +186,9 @@ use std::error::Error;
              let device = self.current_device()?;
              let configuration = device.supported_stream_configuration()?;
 
-             // The frame length defines a pack of samples. We need as much frames as in FRAME_RATE declared.
-             // So we split the Samples to the FRAME_RATE
-             let frame_length = (configuration.sample_rate.0 / CAPTURE_FRAME_RATE) as usize;
 
-             // Frame capture_size defines how many frames will be captured in 1 period
-             // The display rate is set to 100fps and the streaming rate is 50fps. So we need 2 frames for each period.
-             let frame_capture_size = (CAPTURE_FRAME_RATE/DISPLAY_FRAME_RATE) as usize;
-
-
-
-
-             // Create a new buffer which needs to contain as much frames as frame_capture_size
-             let mut buffer = vec![0 as f32; frame_length*frame_capture_size];
+             let buffer_info = self.buffer_info()?;
+             let mut buffer = vec![0 as f32; buffer_info.buffer_size()];
              let mut buffer_step = false;
 
             self.input_stream = Some(device.build_input_stream(
@@ -176,10 +200,10 @@ use std::error::Error;
 
                     match buffer_step {
                         false => {
-                            buffer.splice(..frame_length, iter);
+                            buffer.splice(..buffer_info.frame_length, iter);
                         }
                         true => {
-                            buffer.splice(frame_length.., iter);
+                            buffer.splice(buffer_info.frame_length.., iter);
                             callback(buffer.as_slice(), info)
                         }
                     }
