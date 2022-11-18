@@ -232,7 +232,14 @@ use std::error::Error;
             }
         }
 
-
+        /// Start the current stream
+        pub fn pause_stream(&self) -> Result<(), Box<dyn Error>> {
+            match &self.input_stream {
+                // Return NoStream if no stream is selected
+                None => Err(Box::new(NoStream)),
+                Some(it) => Ok(it.pause()?)
+            }
+        }
 
 
     }
