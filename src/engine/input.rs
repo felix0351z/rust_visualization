@@ -1,67 +1,19 @@
 use std::error::Error;
-    use cpal::{ChannelCount, DefaultStreamConfigError, Device, Host, InputCallbackInfo, Stream, StreamConfig, StreamError};
-    use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-    use thiserror::Error;
-    use crate::input::InputSourceError::*;
 
-    //TODO: Bufferalgorithmus auslagern
+use cpal::{DefaultStreamConfigError, Device, Host, InputCallbackInfo, Stream, StreamConfig, StreamError};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
+use crate::engine::utils::{AudioBuffer, BufferInfo};
+use crate::engine::errors::InputSourceError;
+use crate::engine::errors::InputSourceError::*;
 
-    // The default frame on WASAPI is 100 FPS.
-    const CAPTURE_FRAME_RATE: u32 = 100;
-    // The default streaming rate
-    const DISPLAY_FRAME_RATE: u32 = 50;
-    //the difference has to be an int.
-
-
-    /// Important errors for interaction with an *DeviceInputSource*
-    #[derive(Error, Debug)]
-    pub enum InputSourceError {
-
-        /// Will be returned if there is no Device currently selected(*None*) in the InputSource
-        #[error("No input device is currently selected")]
-        NoDeviceSelected,
-
-        /// Will be returned when function was called which needs an InputStream, but no InputStream is available
-        #[error("No input stream found")]
-        NoStream,
-
-        // Will be returned if a stereo stream want to be build, but there is no stereo channel available
-        #[error("No Stereo channel available")]
-        NoStereoChannel,
-    }
-
-    /// Gives all information needed to buffer audio data.
-    pub  struct BufferInfo {
-        pub frame_length: usize,
-        pub frame_capture_size: usize
-    }
-
-    impl BufferInfo {
-
-        pub fn buffer_size(&self) -> usize {
-            self.frame_length*self.frame_capture_size
-        }
-
-    }
+// The default frame on WASAPI is 100 FPS.
+const CAPTURE_FRAME_RATE: u32 = 100;
+// The default streaming rate
+const DISPLAY_FRAME_RATE: u32 = 50;
+//the difference has to be an int.
 
 
-    /// Describes a device with all necessary information's to decide,
-    /// which device should be used.
-    pub struct DeviceInfo {
-        /// The position of the device referred to the host.
-        position: usize,
-
-        /// Display name of the device
-        name: String,
-
-        /// Amount of channels the device has. Mostly stereo or mono
-        channels: u16,
-
-        /// SampleRate of the device. Important for visualization.
-        /// Lower sample rate means less information to display or a smaller refresh rate
-        sample_rate: u32
-    }
 
     /// Create an interaction with the pc's audio input
     /// Provides all necessary audio device information's
@@ -154,21 +106,24 @@ use std::error::Error;
             )
         }
 
-        /// Get the current device
-        fn current_device(&self) -> Result<&Device, InputSourceError> {
-            self.device.as_ref().ok_or(NoDeviceSelected)
+
+        /// Start the current stream
+        pub fn start_stream(&self) -> Result<(), Box<dyn Error>> {
+            match &self.input_stream {
+                // Return NoStream if no stream is selected
+                None => Err(Box::new(NoStream)),
+                Some(it) => Ok(it.play()?)
+            }
         }
 
-        /*fn build_stereo_stream<C, E>(
-            &mut self,
-            mut callback: C,
-            mut error_callback: E
-        ) -> Result<(), Box<dyn Error>>
-            where
-                C: FnMut(&[f32], &InputCallbackInfo) + Send + 'static,
-                E: FnMut(StreamError) + Send + 'static
-        {
-        }*/
+        /// Start the current stream
+        pub fn pause_stream(&self) -> Result<(), Box<dyn Error>> {
+            match &self.input_stream {
+                // Return NoStream if no stream is selected
+                None => Err(Box::new(NoStream)),
+                Some(it) => Ok(it.pause()?)
+            }
+        }
 
 
         /// Build a new input stream with a fixed configuration, frame_length and frame_capture_size
@@ -187,8 +142,7 @@ use std::error::Error;
              let configuration = device.supported_stream_configuration()?;
 
 
-             let buffer_info = self.buffer_info()?;
-             let mut buffer = vec![0 as f32; buffer_info.buffer_size()];
+             let mut buffer = AudioBuffer::from_info(self.buffer_info()?);
              let mut buffer_step = false;
 
             self.input_stream = Some(device.build_input_stream(
@@ -200,10 +154,10 @@ use std::error::Error;
 
                     match buffer_step {
                         false => {
-                            buffer.splice(..buffer_info.frame_length, iter);
+                            buffer.data.splice(..buffer.frame_length(), iter);
                         }
                         true => {
-                            buffer.splice(buffer_info.frame_length.., iter);
+                            buffer.data.splice(buffer.frame_length().., iter);
                             callback(buffer.as_slice(), info)
                         }
                     }
@@ -223,22 +177,9 @@ use std::error::Error;
             Ok(())
         }
 
-        /// Start the current stream
-        pub fn start_stream(&self) -> Result<(), Box<dyn Error>> {
-            match &self.input_stream {
-                // Return NoStream if no stream is selected
-                None => Err(Box::new(NoStream)),
-                Some(it) => Ok(it.play()?)
-            }
-        }
-
-        /// Start the current stream
-        pub fn pause_stream(&self) -> Result<(), Box<dyn Error>> {
-            match &self.input_stream {
-                // Return NoStream if no stream is selected
-                None => Err(Box::new(NoStream)),
-                Some(it) => Ok(it.pause()?)
-            }
+        /// Get the current device
+        fn current_device(&self) -> Result<&Device, InputSourceError> {
+            self.device.as_ref().ok_or(NoDeviceSelected)
         }
 
 
@@ -269,4 +210,22 @@ use std::error::Error;
         }
 
     }
+
+
+/// Describes a device with all necessary information's to decide,
+/// which device should be used.
+pub struct DeviceInfo {
+    /// The position of the device referred to the host.
+    position: usize,
+
+    /// Display name of the device
+    name: String,
+
+    /// Amount of channels the device has. Mostly stereo or mono
+    channels: u16,
+
+    /// SampleRate of the device. Important for visualization.
+    /// Lower sample rate means less information to display or a smaller refresh rate
+    sample_rate: u32
+}
 
