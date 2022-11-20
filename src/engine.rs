@@ -2,6 +2,11 @@ pub mod input;
 pub mod errors;
 pub mod utils;
 
+mod effects;
+mod filters;
+mod processing;
+
+
 use input::*;
 use utils::AudioBuffer;
 
