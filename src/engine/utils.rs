@@ -3,6 +3,15 @@ pub struct BufferInfo {
     pub frame_capture_size: usize
 }
 
+impl BufferInfo {
+
+    /// Get the size of the buffer
+    pub fn buffer_size(&self) -> usize {
+        return self.frame_length*self.frame_capture_size
+    }
+
+}
+
 /// Contains all necessary information's to buffer audio data..
 pub struct AudioBuffer<T> {
     pub data: Vec<T>,
@@ -44,9 +53,8 @@ impl<T> AudioBuffer<T> {
         self.info.frame_capture_size
     }
 
-    /// Get the size of the buffer
     pub fn buffer_size(&self) -> usize {
-        self.info.frame_length*self.info.frame_capture_size
+        self.info.buffer_size()
     }
 
     pub fn buffer_info(&self) -> &BufferInfo {
