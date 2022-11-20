@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use cpal::{DefaultStreamConfigError, Device, Host, InputCallbackInfo, Stream, StreamConfig, StreamError};
+use cpal::{DefaultStreamConfigError, Device, DevicesError, Host, InputCallbackInfo, Stream, StreamConfig, StreamError};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use crate::engine::utils::{AudioBuffer, BufferInfo};
@@ -54,6 +54,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
         }
 
         /// Gets all available devices
+        /// *DevicesError* or *DefaultStreamConfigError*
         pub fn available_devices(&self) -> Result<Vec<DeviceInfo>, Box<dyn Error>> {
             let mut vec: Vec<DeviceInfo> = vec![];
             let devices= self.host
@@ -81,7 +82,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
         }
 
         /// Set device at position as current device
-        pub fn set_device(&mut self, position: usize) -> Result<(), Box<dyn Error>> {
+        pub fn set_device(&mut self, position: usize) -> Result<(), DevicesError> {
             let mut devices = self.host.input_devices()?;
             let device = devices.nth(position);
 
@@ -116,7 +117,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
             }
         }
 
-        /// Start the current stream
+        /// Stop the current stream
         pub fn pause_stream(&self) -> Result<(), Box<dyn Error>> {
             match &self.input_stream {
                 // Return NoStream if no stream is selected
