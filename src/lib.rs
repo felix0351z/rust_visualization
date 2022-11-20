@@ -1,10 +1,10 @@
 extern crate core;
-mod input;
+mod engine;
 
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
-    use crate::input::DeviceInputSource;
+    use crate::engine::input::DeviceInputSource;
 
 
     //run with --nocapture to see the output
