@@ -11,5 +11,12 @@ src = "src/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# AudioInput Library
 cpal = "0.14.1"
-thiserror = "1.0.37"
+
+#Error Handling
+error-stack = "0.2.4"
+
+#Logging
+log = "0.4.17"
+env_logger = "0.9.3"
