@@ -1,30 +1,5 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Error, Formatter};
 use error_stack::Context;
-
-#[derive(Debug)]
-pub enum ProgramError {
-    InputError(InputError),
-
-    /// Error which isn't fault of the user
-    /// CPAL errors are also included here
-    Other(String)
-}
-
-
-impl Context for ProgramError{}
-
-impl Display for ProgramError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ProgramError::InputError(err) => {
-                write!(f, "InputError occurred: {}", err.to_string())
-            }
-            ProgramError::Other(err) => {
-                write!(f, "Unknown error: {}", err)
-            }
-        }
-    }
-}
 
 
 #[derive(Debug)]

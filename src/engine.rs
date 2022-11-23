@@ -9,10 +9,10 @@ mod processing;
 
 use input::*;
 use utils::AudioBuffer;
+use errors::InputError;
 
-use std::error::Error;
+use error_stack::Result;
 use cpal::{InputCallbackInfo};
-
 
 
 
@@ -28,25 +28,23 @@ impl Engine {
 
 
     /// Generates a new engine with all necessary dependencies
-    pub fn new() -> Result<Self, Box<dyn Error>> {
+    pub fn new() -> Engine {
         let input = DeviceInputSource::new();
 
-        Ok(
-            Engine { input }
-        )
+        Engine {
+            input
+        }
     }
 
     //--------------Public-Methods--------------------------------------------------------
 
     /// Get all currently available devices which can be used as data input
-    /// *DevicesError* or *DefaultStreamConfigError*
-    pub fn get_available_devices(&self) -> Result<Vec<DeviceInfo>, Box<dyn Error>> {
+    pub fn get_available_devices(&self) -> Result<Vec<DeviceInfo>, InputError> {
         self.input.available_devices()
     }
 
     /// Set a specific device as data input
-    /// Errors: *DevicesError*
-    pub fn set_device(&mut self, position: usize) -> Result<(), Box<dyn Error>> {
+    pub fn set_device(&mut self, position: usize) -> Result<(), InputError> {
         self.input.set_device(position)?;
 
         // Update the stream after the device was changed
@@ -54,15 +52,13 @@ impl Engine {
     }
 
 
-    /// Start the current stream. Returns an error if no stream was build
-    /// Errors: *NoStream* or *PlayStreamError*
-    pub fn start_stream(&self) -> Result<(), Box<dyn Error>> {
+    /// Start the current stream
+    pub fn start_stream(&self) -> Result<(), InputError> {
         self.input.start_stream()
     }
 
     /// Stops the current stream.
-    /// Errors: *NoStream* or *PauseStreamError*
-    pub fn pause_stream(&self) -> Result<(), Box<dyn Error>> {
+    pub fn pause_stream(&self) -> Result<(), InputError> {
         self.input.pause_stream()
     }
 
@@ -70,7 +66,7 @@ impl Engine {
         todo!()
     }
 
-    pub fn set_effect(&mut self, position: usize) -> Result<(), Box<dyn Error>> {
+    pub fn set_effect(&mut self, position: usize) -> Result<(), InputError> {
         ///....
 
         self.update_stream()
@@ -80,7 +76,7 @@ impl Engine {
     //---------------------Private-Methods---------------------------------
 
     /// Drops the current stream and start a new stream
-    fn update_stream(&mut self) -> Result<(), Box<dyn Error>> {
+    fn update_stream(&mut self) -> Result<(), InputError> {
         //self.pause_stream()?;
         self.build_stream()?;
 
@@ -89,7 +85,7 @@ impl Engine {
     }
 
 
-    fn build_stream(&mut self) -> Result<(), Box<dyn Error>> {
+    fn build_stream(&mut self) -> Result<(), InputError> {
 
         // The input contains 1 buffer and for framing we want so save 2 frames.
         let frame_length = self.input.buffer_info()?.buffer_size();
