@@ -1,41 +1,76 @@
+use dyn_clone::DynClone;
+use super::utils::Domain;
 
-/// Enum to categories the different Effect types
-enum EffectType {
-    FrequencyDomain,
-    TimeDomain
-}
+pub mod frequency;
 
-/// An effect is an object which takes an input signal and produces a new output signal.
-///
-/// This trait is only for the basic functions which every effect needs.
-/// A *FrequencyEffect* or an *TimeEffect* are the ones which implements the logic.
-pub trait Effect: FrequencyDomain + TimeDomain  {
+// Apply the clone trait for every Processing object
+dyn_clone::clone_trait_object!(EffectProcessing);
 
-    /// Name of the effect
-    fn name(&self) -> String;
-
-    /// Icon source for the effect
-    fn icon(&self) -> String;
-
-    /// Frequency effect or time effect?
-    fn effect_type(&self) -> EffectType;
-    
-}
-
-/// A Frequency Effect is an effect which takes the frequency domain as input signal
-/// and process a new effect out of it.
-pub trait FrequencyDomain {
+/// Every effect needs a function to process the effect.
+/// The input can be the mel domain for Frequency effect or the time domain for wave effects.
+pub trait EffectProcessing: DynClone {
 
     /// Defines how much mel points should be calculated for this effect.
     fn n_mel(&self, n_led: usize);
 
-    /// Processes the effect. Take mel as input.
-    fn process(&self, mel: &[f32], output: &mut [f32]);
+    /// Processes the effect.
+    fn process_frequency(&self, mel: &[f32], output: &mut [f32]);
 
+    //fn process_wave(...)
 }
 
-/// A Time Effect is an effect which takes the standard wave form as input signal
-/// and process a new effect out of it.
-pub trait TimeDomain {
-    //TODO
+// to send the processing trait to the worker (which is another thread),
+// we need to implement the Send trait
+type EffectProcessor = dyn EffectProcessing + Send;
+
+pub struct Effect {
+    info: EffectInfo,
+    processor: Box<EffectProcessor>
+}
+
+#[derive(Copy, Clone)]
+pub struct EffectInfo {
+    pub name: String,
+    pub icon: String,
+    pub domain: Domain,
+}
+
+impl Effect {
+
+    pub fn new_effect(name: String, icon: String, domain: Domain, processor: Box<EffectProcessor>) -> Effect {
+        Effect { 
+            info: EffectInfo {
+                name,
+                icon,
+                domain
+            }
+            , processor 
+        }
+    }
+
+    /// Name of the effect
+    pub fn name(&self) -> &str {
+        self.info.name.as_str()
+    }
+
+    /// Path to the icon of the effect
+    pub fn icon(&self) -> &str {
+        self.info.icon.as_str()
+    }
+
+    /// Frequency or Wave effect? 
+    pub fn domain(&self) -> Domain { //Copy
+        self.info.domain
+    }
+
+    /// Create a new boxed Processing trait
+    pub fn create(&self) -> Box<EffectProcessor> {
+        self.processor.clone()
+    }
+
+    // Copy the info from the effect
+    pub fn get_info(&self) -> EffectInfo {
+        self.info
+    }
+
 }
