@@ -3,6 +3,13 @@ pub struct BufferInfo {
     pub frame_capture_size: usize
 }
 
+/// Enum to categories fir different domains
+#[derive(Copy, Clone)]
+pub enum Domain {
+    FrequencyDomain,
+    TimeDomain
+}
+
 impl BufferInfo {
 
     /// Get the size of the buffer
