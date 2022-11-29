@@ -27,6 +27,16 @@ pub struct FilterInfo {
 }
 
 impl Filter {
+
+    pub fn new(name: &'static str, domain: Domain, processor: Box<FilterProcessor>) -> Filter {
+        Filter {
+            info: FilterInfo {
+                name,
+                domain
+            }
+            , processor
+        }
+    }
     
     /// Name of the effect
     pub fn name(&self) -> &str {
