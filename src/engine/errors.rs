@@ -1,6 +1,39 @@
 use std::fmt::{Debug, Display, Error, Formatter};
 use error_stack::Context;
 
+#[derive(Debug)]
+pub enum ProgramError {
+
+    InputError,
+
+    EffectNotFound(usize),
+
+    FilterNotFound(usize)
+
+}
+
+impl Display for ProgramError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProgramError::InputError => {
+                f.write_str("Input related error occurred")
+            }
+            ProgramError::EffectNotFound(id) => {
+                f.write_fmt(format_args!("Effect with the id {id} not found"))
+            }
+            ProgramError::FilterNotFound(id) => {
+                f.write_fmt(format_args!("Filter with the id {id} not found"))
+            }
+        }
+    }
+}
+
+impl Context for ProgramError {
+
+}
+
+
+
 
 #[derive(Debug)]
 pub enum InputError {
