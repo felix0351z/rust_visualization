@@ -30,14 +30,14 @@ pub struct Effect {
 
 #[derive(Copy, Clone)]
 pub struct EffectInfo {
-    pub name: String,
-    pub icon: String,
+    pub name: &'static str,
+    pub icon: &'static str,
     pub domain: Domain,
 }
 
 impl Effect {
 
-    pub fn new_effect(name: String, icon: String, domain: Domain, processor: Box<EffectProcessor>) -> Effect {
+    pub fn new(name: &'static str, icon: &'static str, domain: Domain, processor: Box<EffectProcessor>) -> Effect {
         Effect { 
             info: EffectInfo {
                 name,
@@ -50,12 +50,12 @@ impl Effect {
 
     /// Name of the effect
     pub fn name(&self) -> &str {
-        self.info.name.as_str()
+        self.info.name
     }
 
     /// Path to the icon of the effect
     pub fn icon(&self) -> &str {
-        self.info.icon.as_str()
+        self.info.icon
     }
 
     /// Frequency or Wave effect? 

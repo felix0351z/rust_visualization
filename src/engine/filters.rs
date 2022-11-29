@@ -22,7 +22,7 @@ pub struct Filter {
 
 #[derive(Copy, Clone)]
 pub struct FilterInfo {
-    pub name: String,
+    pub name: &'static str,
     pub domain: Domain
 }
 
@@ -30,12 +30,12 @@ impl Filter {
     
     /// Name of the effect
     pub fn name(&self) -> &str {
-        self.info.name.as_str()
+        self.info.name
     }
 
     /// Frequency or Wave filter?
     pub fn domain(&self) -> Domain { //Copy
-        self.domain
+        self.info.domain
     }
 
     /// Create a new boxed Processing trait
