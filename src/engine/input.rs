@@ -66,6 +66,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
                 .into_report()
                 .change_context(InputError::CPAL)
                 .attach_printable("Failed to iterate over all available devices")?;
+            let default_device_name = self.default_device_name();
 
             // Iterate over all available input devices
             for (i, device) in devices.enumerate() {
@@ -74,21 +75,23 @@ const DISPLAY_FRAME_RATE: u32 = 50;
                 let config = ok_or_skip!(device.default_input_config())
                     .config();
 
+                // Check if the current device is the default device
+                let default_device = match default_device_name.as_ref() {
+                    None => false, // If there is no default device, no device will it be
+                    Some(default_name) => { default_name.as_str() == name.as_str() } // Compare the device name to check for standard device
+                };
+
 
                 vec.push(DeviceInfo {
                     position: i,
                     name,
                     channels: config.channels,
-                    sample_rate: config.sample_rate.0
+                    sample_rate: config.sample_rate.0,
+                    standard: default_device
                 })
             }
 
             Ok(vec)
-        }
-
-        /// Set the default device as input device
-        pub fn set_default_device(&mut self) {
-            self.device = self.host.default_input_device()
         }
 
         /// Set device at position as current device
@@ -218,6 +221,14 @@ const DISPLAY_FRAME_RATE: u32 = 50;
                 .ok_or(Report::new(InputError::NoDeviceSelected))
         }
 
+        /// Get the default name for the input device.
+        fn default_device_name(&self) -> Option<String> {
+            match self.host.default_input_device() {
+                None => None,
+                Some(device) => Some(device.safe_name())
+            }
+        }
+
 
     }
 
@@ -252,17 +263,19 @@ const DISPLAY_FRAME_RATE: u32 = 50;
 /// which device should be used.
 pub struct DeviceInfo {
     /// The position of the device referred to the host.
-    position: usize,
+    pub position: usize,
 
     /// Display name of the device
-    name: String,
+    pub name: String,
 
     /// Amount of channels the device has. Mostly stereo or mono
-    channels: u16,
+    pub channels: u16,
 
     /// SampleRate of the device. Important for visualization.
     /// Lower sample rate means less information to display or a smaller refresh rate
-    sample_rate: u32
+    pub sample_rate: u32,
+
+    pub standard: bool
 }
 
 
