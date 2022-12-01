@@ -3,6 +3,7 @@ use visualization_test::engine::errors::{InputError, ProgramError};
 use visualization_test::engine::input::DeviceInfo;
 
 use error_stack::Result;
+const LEDS: usize = 60;
 
 
 fn print_device(device: &DeviceInfo) {
@@ -11,7 +12,7 @@ fn print_device(device: &DeviceInfo) {
 
 #[test]
 fn test_available_devices() -> Result<(), InputError> {
-    let engine = Engine::new(60);
+    let engine = Engine::new(LEDS);
     let devices = engine.get_available_devices();
 
     match devices {
@@ -30,7 +31,7 @@ fn test_available_devices() -> Result<(), InputError> {
 
 #[test]
 fn test_set_device() -> Result<(), ProgramError>{
-    let mut engine = Engine::new(60);
+    let mut engine = Engine::new(LEDS);
     let devices = engine.get_available_devices();
 
 
@@ -55,6 +56,52 @@ fn test_set_device() -> Result<(), ProgramError>{
 
 
 }
+
+#[test]
+fn test_get_effects() -> () {
+    let engine = Engine::new(LEDS);
+
+    let effects = engine.get_effects();
+
+    for effect in effects.iter() {
+        println!("Effect {} with {} | {}", effect.name, effect.icon, effect.domain);
+    }
+
+}
+
+#[test]
+fn test_set_effect() {
+
+}
+
+
+#[test]
+fn test_get_filters() {
+    let engine = Engine::new(LEDS);
+
+    let filters = engine.get_filters();
+
+    for filter in  filters.iter() {
+        println!("Filter {} | {}", filter.name, filter.domain)
+    }
+}
+
+#[test]
+fn test_set_filter() {
+
+}
+
+
+#[test]
+fn test_runtime() {
+
+}
+
+#[test]
+fn test_pause() {
+
+}
+
 
 
 
