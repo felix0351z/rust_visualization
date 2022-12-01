@@ -11,7 +11,7 @@ dyn_clone::clone_trait_object!(EffectProcessing);
 pub trait EffectProcessing: DynClone {
 
     /// Defines how much mel points should be calculated for this effect.
-    fn n_mel(&self, n_led: usize);
+    fn n_mel(&self, n_led: usize) -> usize;
 
     /// Processes the effect.
     fn process_frequency(&self, mel: &[f32], output: &mut [f32]);
