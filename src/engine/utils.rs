@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter, Write};
+
 pub struct BufferInfo {
     pub frame_length: usize,
     pub frame_capture_size: usize
@@ -9,6 +11,16 @@ pub enum Domain {
     FrequencyDomain,
     TimeDomain
 }
+
+impl Display for Domain {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Domain::FrequencyDomain => f.write_str("Frequency Domain"),
+            Domain::TimeDomain => f.write_str("Time Domain")
+        }
+    }
+}
+
 
 impl BufferInfo {
 
