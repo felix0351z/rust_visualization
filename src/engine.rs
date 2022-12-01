@@ -83,10 +83,14 @@ impl Engine {
         self.update_stream()
     }
 
+    /// Start function
+    /// Drops the current stream and start a new stream
+    pub fn update_stream(&mut self) -> Result<(), ProgramError> {
+        //self.pause_stream()?;
+        self.build_stream()?;
 
-    /// Start the current stream
-    pub fn start_stream(&self) -> Result<(), InputError> {
-        self.input.start_stream()
+        self.start_stream()
+            .change_context(ProgramError::InputError)
     }
 
     /// Stops the current stream.
@@ -141,14 +145,11 @@ impl Engine {
 
     //---------------------Private-Methods---------------------------------
 
-    /// Drops the current stream and start a new stream
-    fn update_stream(&mut self) -> Result<(), ProgramError> {
-        //self.pause_stream()?;
-        self.build_stream()?;
-
-        self.start_stream()
-            .change_context(ProgramError::InputError)
+    /// Start the current stream
+    fn start_stream(&self) -> Result<(), InputError> {
+        self.input.start_stream()
     }
+
 
     fn get_current_effect(&self) -> Result<&Effect, ProgramError> {
         self.effects.get(self.current_effect)
