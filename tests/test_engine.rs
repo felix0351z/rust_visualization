@@ -1,8 +1,10 @@
+use std::thread::sleep;
+use std::time::Duration;
 use visualization_test::engine::Engine;
 use visualization_test::engine::errors::{InputError, ProgramError};
 use visualization_test::engine::input::DeviceInfo;
 
-use error_stack::Result;
+use error_stack::{Result, ResultExt};
 const LEDS: usize = 60;
 
 
@@ -89,17 +91,31 @@ fn test_get_filters() {
 #[test]
 fn test_set_filter() {
 
+
 }
 
 
 #[test]
-fn test_runtime() {
+fn test_runtime() -> Result<(), ProgramError> {
+    let mut engine = Engine::new(LEDS);
+    engine.update_stream()?; //Start the stream!
 
+    sleep(Duration::from_secs(5));
+    Ok(())
 }
 
 #[test]
-fn test_pause() {
+fn test_pause() -> Result<(), ProgramError> {
+    let mut engine = Engine::new(LEDS);
+    engine.update_stream()?;
 
+    sleep(Duration::from_secs(2));
+    engine.pause_stream()
+        .change_context(ProgramError::InputError)
+        ?;
+    sleep(Duration::from_secs(2));
+
+    Ok(())
 }
 
 
