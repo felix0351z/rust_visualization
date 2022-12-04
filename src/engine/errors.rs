@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display, Error, Formatter};
+use cpal::StreamError;
 use error_stack::Context;
 
 #[derive(Debug)]
@@ -79,6 +80,28 @@ impl Display for CPALError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str( "CPAL Error occurred")
     }
+
+}
+
+pub enum SenderError {
+    IOError,
+    UnsupportedName,
+    Unknown,
+}
+
+impl Display for SenderError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl Debug for SenderError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl Context for SenderError {
 
 }
 

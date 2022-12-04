@@ -14,11 +14,15 @@ src = "src/lib.rs"
 # AudioInput Library
 cpal = "0.14.1"
 
+# Dependeny to send via SACN/E1.31
+sacn-unofficial = "0.9.0"
+
+#Clone Library for EffectProcessing and FilterProcessing
+dyn-clone = "1.0.9"
+
 #Error Handling
 error-stack = "0.2.4"
 
 #Logging
 log = "0.4.17"
 env_logger = "0.9.3"
-
-dyn-clone = "1.0.9"
