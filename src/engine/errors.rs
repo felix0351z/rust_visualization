@@ -84,8 +84,11 @@ impl Display for CPALError {
 }
 
 pub enum SenderError {
+    WrongPacketSize,
+    MaximumOwner,
+    //AlreadyTerminated,
+
     IOError,
-    UnsupportedName,
     Unknown,
 }
 

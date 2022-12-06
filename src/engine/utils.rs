@@ -1,5 +1,10 @@
 use std::fmt::{Display, Formatter, Write};
 
+
+pub fn count_true(slice: &[bool]) -> usize {
+    slice.iter().filter(|b| **b).count()
+}
+
 pub struct BufferInfo {
     pub frame_length: usize,
     pub frame_capture_size: usize
