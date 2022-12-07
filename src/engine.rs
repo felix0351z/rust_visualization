@@ -10,15 +10,15 @@ mod processing;
 
 use input::*;
 use utils::AudioBuffer;
-use errors::{ProgramError, InputError};
+
 use effects::{EffectProcessing, Effect, EffectInfo};
 use effects::frequency::FrequencyEffect;
 use filters::{FilterProcessing, Filter, FilterInfo};
 
-use error_stack::{Report, Result, ResultExt};
 use cpal::{InputCallbackInfo};
 use crate::engine::utils::Domain;
-
+use errors::ApplicationError;
+use anyhow::Result;
 
 pub struct Engine {
     input: DeviceInputSource,
@@ -71,14 +71,13 @@ impl Engine {
     //--------------Public-Methods--------------------------------------------------------
 
     /// Get all currently available devices which can be used as data input
-    pub fn get_available_devices(&self) -> Result<Vec<DeviceInfo>, InputError> {
+    pub fn get_available_devices(&self) -> Result<Vec<DeviceInfo>> {
         self.input.available_devices()
     }
 
     /// Set a specific device as data input
-    pub fn set_device(&mut self, position: usize) -> Result<(), ProgramError> {
-        self.input.set_device(position)
-            .change_context(ProgramError::InputError)?;
+    pub fn set_device(&mut self, position: usize) -> Result<()> {
+        self.input.set_device(position)?;
 
         // Update the stream after the device was changed
         self.update_stream()
@@ -86,16 +85,15 @@ impl Engine {
 
     /// Start function
     /// Drops the current stream and start a new stream
-    pub fn update_stream(&mut self) -> Result<(), ProgramError> {
+    pub fn update_stream(&mut self) -> Result<()> {
         //self.pause_stream()?;
         self.build_stream()?;
 
         self.start_stream()
-            .change_context(ProgramError::InputError)
     }
 
     /// Stops the current stream.
-    pub fn pause_stream(&self) -> Result<(), InputError> {
+    pub fn pause_stream(&self) -> Result<()> {
         self.input.pause_stream()
     }
 
@@ -122,14 +120,14 @@ impl Engine {
     }
 
     /// Set the current effect
-    pub fn set_effect(&mut self, position: usize) -> Result<(), ProgramError> {
+    pub fn set_effect(&mut self, position: usize) -> Result<()> {
         self.current_effect = position;
 
         self.update_stream()
     }
 
     // Set the current filter
-    pub fn set_filter(&mut self, position: usize) -> Result<(), ProgramError> {
+    pub fn set_filter(&mut self, position: usize) -> Result<()> {
         self.current_filter = position;
 
         self.update_stream()
@@ -147,15 +145,17 @@ impl Engine {
     //---------------------Private-Methods---------------------------------
 
     /// Start the current stream
-    fn start_stream(&self) -> Result<(), InputError> {
+    fn start_stream(&self) -> Result<()> {
         self.input.start_stream()
     }
 
 
-    fn get_current_effect(&self) -> Result<&Effect, ProgramError> {
+    fn get_current_effect(&self) -> Result<&Effect> {
         self.effects.get(self.current_effect)
             .ok_or(
-                Report::from(ProgramError::EffectNotFound(self.current_effect))
+                Err(ApplicationError::EffectNotFound {
+                    id: self.current_effect
+                })?
             )
     }
 
@@ -165,15 +165,14 @@ impl Engine {
         self.filters.get(self.current_filter)
     }
 
-    fn get_frame_length(&self) -> Result<usize, ProgramError> {
-        let info = self.input.buffer_info()
-            .change_context(ProgramError::InputError)?;
+    fn get_frame_length(&self) -> Result<usize> {
+        let info = self.input.buffer_info()?;
 
         Ok(info.frame_length)
     }
 
 
-    fn build_stream(&mut self) -> Result<(), ProgramError> {
+    fn build_stream(&mut self) -> Result<()> {
 
         let frame_length = self.get_frame_length()?;
         let effect = self.get_current_effect()?.create();
@@ -203,8 +202,7 @@ impl Engine {
                     todo!()
                 }
 
-            )
-                .change_context(ProgramError::InputError)?;
+            )?;
         }
 
         Ok(())

@@ -1,13 +1,12 @@
-use error_stack::{IntoReport, Report, Result, ResultExt};
 use log::warn;
+use anyhow::Result;
+use super::errors::ApplicationError;
 
 use crate::engine::utils::{AudioBuffer, BufferInfo};
-use crate::engine::errors::InputError;
 use crate::ok_or_skip;
 
 use cpal::{DefaultStreamConfigError, Device, Host, InputCallbackInfo, Stream, StreamConfig, StreamError};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-
 
 
 // The default frame on WASAPI is 100 FPS.
@@ -49,23 +48,18 @@ const DISPLAY_FRAME_RATE: u32 = 50;
         }
 
         /// Get the current device name
-        pub fn current_device_name(&self) -> Result<String, InputError> {
+        pub fn current_device_name(&self) -> Result<String> {
             match &self.device {
-                None => Err(
-                    Report::from(InputError::NoDeviceSelected)
-                ),
-
+                None => Err(ApplicationError::NoDeviceSelected)?,
                 Some(device) => Ok(device.safe_name())
             }
         }
 
         /// Gets all current available devices
-        pub fn available_devices(&self) -> Result<Vec<DeviceInfo>, InputError> {
+        pub fn available_devices(&self) -> Result<Vec<DeviceInfo>> {
             let mut vec: Vec<DeviceInfo> = vec![];
-            let devices= self.host.input_devices()
-                .into_report()
-                .change_context(InputError::CPAL)
-                .attach_printable("Failed to iterate over all available devices")?;
+
+            let devices = self.host.input_devices()?;
             let default_device_name = self.default_device_name();
 
             // Iterate over all available input devices
@@ -95,24 +89,18 @@ const DISPLAY_FRAME_RATE: u32 = 50;
         }
 
         /// Set device at position as current device
-        pub fn set_device(&mut self, position: usize) -> Result<(), InputError> {
-            let mut devices = self.host.input_devices()
-                .into_report()
-                .change_context(InputError::CPAL)
-                .attach_printable("Failed to iterate over all devices!")?;
-
+        pub fn set_device(&mut self, position: usize) -> Result<()> {
+            let mut devices = self.host.input_devices()?;
 
             let device = devices.nth(position);
             Ok(self.device = device)
         }
 
-        pub fn buffer_info(&self) -> Result<BufferInfo, InputError> {
-
+        pub fn buffer_info(&self) -> Result<BufferInfo> {
             let device = self.device.as_ref()
-                .ok_or(Report::from(InputError::NoDeviceSelected))?;
+                .ok_or(ApplicationError::NoDeviceSelected)?;
 
-            let config = device.supported_stream_configuration()
-                .change_context(InputError::CPAL)?;
+            let config = device.supported_stream_configuration()?;
 
             // The frame length defines a pack of samples. We need as much frames as in FRAME_RATE declared.
             // So we split the Samples to the FRAME_RATE
@@ -129,29 +117,20 @@ const DISPLAY_FRAME_RATE: u32 = 50;
 
 
         /// Start the current stream
-        pub fn start_stream(&self) -> Result<(), InputError> {
+        pub fn start_stream(&self) -> Result<()> {
             match &self.input_stream {
                 // Return NoStream if no stream is selected
-                None => Err(Report::from(InputError::NoStream)),
-
-                Some(it) => Ok(
-                    it.play()
-                        .into_report()
-                        .change_context(InputError::CPAL)?
-                )
+                None => Err(ApplicationError::NoInputStream)?,
+                Some(it) => Ok(it.play()?)
             }
         }
 
         /// Stop the current stream
-        pub fn pause_stream(&self) -> Result<(), InputError> {
+        pub fn pause_stream(&self) -> Result<()> {
             match &self.input_stream {
                 // Return NoStream if no stream is selected
-                None => Err(Report::new(InputError::NoStream)),
-
-                Some(it) => Ok(it.pause()
-                    .into_report()
-                    .change_context(InputError::CPAL)?
-                )
+                None => Err(ApplicationError::NoInputStream)?,
+                Some(it) => Ok(it.pause()?)
             }
         }
 
@@ -162,16 +141,14 @@ const DISPLAY_FRAME_RATE: u32 = 50;
             &mut self,
             mut callback: C,
             mut error_callback: E
-        ) -> Result<(), InputError>
+        ) -> Result<()>
             where
                 C: FnMut(&[f32], &InputCallbackInfo) + Send + 'static,
                 E: FnMut(StreamError) + Send + 'static
          {
              // Return a NoDevice error when no device will be found or a DefaultStreamConfigError if no configuration will be found
              let device = self.current_device()?;
-             
-             let configuration = device.supported_stream_configuration()
-                 .change_context(InputError::CPAL)?;
+             let configuration = device.supported_stream_configuration()?;
 
 
              let mut buffer = AudioBuffer::from_info(self.buffer_info()?);
@@ -204,11 +181,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
                 },
                 move |error: StreamError| {
                     error_callback(error)
-                })
-                // Handle the BuildStreamError
-                .into_report()
-                .change_context(InputError::CPAL)
-                .attach_printable("Failed to build an input stream for device: {}")?
+                })?
             
             );
 
@@ -216,9 +189,9 @@ const DISPLAY_FRAME_RATE: u32 = 50;
         }
 
         /// Get the current device
-        fn current_device(&self) -> Result<&Device, InputError> {
+        fn current_device(&self) -> Result<&Device> {
             self.device.as_ref()
-                .ok_or(Report::new(InputError::NoDeviceSelected))
+                .ok_or(Err(ApplicationError::NoDeviceSelected)?)
         }
 
         /// Get the default name for the input device.

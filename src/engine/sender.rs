@@ -1,12 +1,12 @@
 use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use sacn_unofficial::source::SacnSource;
-use sacn_unofficial::error::errors::{Error, ErrorKind};
 use sacn_unofficial::packet::{ACN_SDT_MULTICAST_PORT, UNIVERSE_CHANNEL_CAPACITY};
 
-use error_stack::{Report, Result};
-use super::errors::SenderError;
+use super::errors::ApplicationError;
 use super::utils::count_true;
+use anyhow::Result;
+use crate::engine::errors::SenderError;
 
 pub struct Sender {
     // Inner sender which sends the data to the network
@@ -21,7 +21,7 @@ impl Sender {
 
     /// Create a new Sender
     /// Could throw a IOError if the underlying UDP Socket can't be created
-    pub fn new() -> Result<Self, SenderError> {
+    pub fn new() -> Result<Self> {
         let inner = SenderInner::new(Self::SENDER_NAME)?;
         let arc = Arc::new(Mutex::new(inner));
 
@@ -37,7 +37,7 @@ impl Sender {
     /// Send the data
     /// Note that the length can't be larger then 512 (*SenderInner::PacketCapacity*)
     /// Could thrown an IOError or a WrongPacketSize Error
-    pub fn send(&self, data: &[u8]) -> Result<(), SenderError> {
+    pub fn send(&self, data: &[u8]) -> Result<()> {
         let mut inner = self.inner.lock().unwrap();
         inner.add(self.owner_id, data)?;
 
@@ -46,7 +46,7 @@ impl Sender {
 
     /// Clone the sender and register the cloned object as new sender
     /// Could throw an error if the underlying inner already reached the maximum of owners
-    pub fn clone(&self) -> Result<Self, SenderError> {
+    pub fn clone(&self) -> Result<Self> {
         // Add new owner to the inner, then
         // copy the arc to the inner and construct a new sender
 
@@ -60,7 +60,7 @@ impl Sender {
     }
 
     /// Add a new owner to the inner
-    fn add_owner(&self) -> Result<usize, SenderError> {
+    fn add_owner(&self) -> Result<usize> {
         // Reference to the inner of the sender. If another engine(thread) uses it, we have to wait
         // until the last owner has finished
         // If an error will be returned another thread panicked, so unwrap will be necessary
@@ -86,10 +86,9 @@ fn new_source(name: &'static str) -> Result<SacnSource, SenderError> {
     let source = match SacnSource::with_ip(name, socket) {
         Ok(value) => value,
         Err(err) => {
-            match err {
-                Error(ErrorKind::Io(..), _) => Err(SenderError::IOError)?,
-                _ => Err(SenderError::Unknown)?
-            }
+            Err(
+                SenderError::CreationError(err.description().to_string())
+            )?
         }
     };
 
@@ -151,9 +150,9 @@ impl SenderInner {
 
     /// Increase the number of owners to the inner and returns the next owner_id
     /// Throw MaximumOwner if the maximum of owners is reached
-    fn add_owner(&mut self) -> Result<usize, SenderError> {
+    fn add_owner(&mut self) -> Result<usize> {
         if self.owners == Self::MAX_OWNERS {
-            Err(Report::new(SenderError::MaximumOwner))?
+            Err(ApplicationError::MaximumEngines)?
         }
 
         // Increase the number of owners
@@ -191,7 +190,7 @@ impl SenderInner {
 
     fn add_to_packet(&mut self, id: usize, data: &[u8]) -> Result<(), SenderError> {
         if data.len() > Self::PACKET_CAPACITY  {
-            Err(Report::new(SenderError::WrongPacketSize))?
+            Err(SenderError::WrongPacketSize)?
         }
 
         // Go the chunk which is reserved for the owner with the *id*
@@ -216,14 +215,9 @@ impl SenderInner {
         ) {
             Ok(_) => (),
             Err(err) => {
-                match err {
-                    Error(ErrorKind::Io(..), _) => Err(SenderError::IOError)?,
-                    //Error(ErrorKind::SenderAlreadyTerminated(..), _) => Err(SenderError::AlreadyTerminated)?,
-                    _ => {
-                        // If there is a error which isn't the users fault the program has to panic
-                        panic!()
-                    }
-                }
+                Err(
+                    SenderError::SendError(err.description().to_string())
+                )?
             }
         };
 
