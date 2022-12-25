@@ -42,20 +42,20 @@ pub struct AudioBuffer<T> {
     info: BufferInfo
 }
 
-impl AudioBuffer<f32> {
+impl AudioBuffer<i16> {
 
     /// To buffer audio data, we need a *frame_length*, to know how long a single audio frame is.
     /// In Addition, wee need to know how many frames are saved in the buffer.
-    pub fn new(frame_length: usize, frame_capture_size: usize) -> AudioBuffer<f32> {
+    pub fn new(frame_length: usize, frame_capture_size: usize) -> AudioBuffer<i16> {
         AudioBuffer {
-            data: vec![0.0; frame_length*frame_capture_size],
+            data: vec![0; frame_length*frame_capture_size],
             info: BufferInfo { frame_length, frame_capture_size }
         }
     }
 
-    pub fn from_info(info: BufferInfo) -> AudioBuffer<f32> {
+    pub fn from_info(info: BufferInfo) -> AudioBuffer<i16> {
         AudioBuffer {
-            data: vec![0.0; info.frame_length*info.frame_capture_size],
+            data: vec![0; info.frame_length*info.frame_capture_size],
             info
         }
     }

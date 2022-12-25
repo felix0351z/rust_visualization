@@ -143,7 +143,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
             mut error_callback: E
         ) -> Result<()>
             where
-                C: FnMut(&[f32], &InputCallbackInfo) + Send + 'static,
+                C: FnMut(&[i16], &InputCallbackInfo) + Send + 'static,
                 E: FnMut(StreamError) + Send + 'static
          {
              // Return a NoDevice error when no device will be found or a DefaultStreamConfigError if no configuration will be found
@@ -156,7 +156,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
 
             self.input_stream = Some(device.build_input_stream(
                 &configuration,
-                move |data: &[f32], info: &InputCallbackInfo| {
+                move |data: &[i16], info: &InputCallbackInfo| {
 
                     // Creates an iterator which only collects one channel
                     let iter = data.iter().step_by(2).cloned();

@@ -14,7 +14,7 @@ pub trait EffectProcessing: DynClone {
     fn n_mel(&self, n_led: usize) -> usize;
 
     /// Processes the effect.
-    fn process_frequency(&self, mel: &[f32], output: &mut [f32]);
+    fn process_frequency(&self, mel: &[i16], output: &mut [i16]);
 
     //fn process_wave(...)
 }

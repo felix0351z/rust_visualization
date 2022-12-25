@@ -182,7 +182,7 @@ impl Engine {
         };
 
         // Define callback
-        let call =  |data: &[f32]| {
+        let call =  |data: &[i16]| {
             println!("First: {:?}", data[0]);
         };
 
@@ -224,12 +224,12 @@ pub struct Worker<C>
     // A Mutable function which gets the effect data is needed.
     // Because of that this Worker struct runs in another thread the callback must have
     // implemented the Send Trait.
-        C: FnMut(&[f32]) + Send + 'static,
+        C: FnMut(&[i16]) + Send + 'static,
 {
     //Input and Output
     callback: C,
-    last_frame: AudioBuffer<f32>,
-    fft_buffer: [f32; processing::N_FFT],
+    last_frame: AudioBuffer<i16>,
+    fft_buffer: [i16; processing::N_FFT],
     //mel buffer -> heap
     //effect buffer -> heap
 
@@ -244,7 +244,7 @@ pub struct Worker<C>
 
 impl<C> Worker<C>
 where
-    C: FnMut(&[f32]) + Send + 'static
+    C: FnMut(&[i16]) + Send + 'static
 {
 
     /// Generates a new Worker struct
@@ -256,7 +256,7 @@ where
         filter: Option<Box<dyn FilterProcessing + Send>>
     ) -> Self {
         let last_frame = AudioBuffer::new(frame_length, 1);
-        let fft_buffer = [0.0 as f32; processing::N_FFT];
+        let fft_buffer = [0; processing::N_FFT];
 
 
 
@@ -267,7 +267,7 @@ where
     }
 
     /// Function which consumes the raw input data and process the effect
-    fn process(&mut self, data: &[f32], info: &InputCallbackInfo) {
+    fn process(&mut self, data: &[i16], info: &InputCallbackInfo) {
         //....
 
         (self.callback)(data)

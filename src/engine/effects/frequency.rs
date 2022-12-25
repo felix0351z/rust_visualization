@@ -9,7 +9,7 @@ impl EffectProcessing for FrequencyEffect {
         n_led/2
     }
 
-    fn process_frequency(&self, input: &[f32], output: &mut [f32]) {
+    fn process_frequency(&self, input: &[i16], output: &mut [i16]) {
         todo!()
     }
 }

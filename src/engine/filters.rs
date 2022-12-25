@@ -7,7 +7,7 @@ use super::utils::Domain;
 dyn_clone::clone_trait_object!(FilterProcessing);
 pub trait FilterProcessing: DynClone {
 
-    fn process(&self, data: &mut [f32]);
+    fn process(&self, data: &mut [i16]);
 
 }
 
@@ -68,7 +68,7 @@ impl Filter {
 pub struct SimplePreEmphasisFilter;
 
 impl FilterProcessing for SimplePreEmphasisFilter {
-    fn process(&self, data: &mut [f32]) {
+    fn process(&self, data: &mut [i16]) {
         todo!()
     }
 }
