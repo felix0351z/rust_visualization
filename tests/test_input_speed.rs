@@ -15,7 +15,19 @@ fn test_input_speed() {
             count+=1;
             if count == 50 {
                 count = 0;
-                println!("{:?}", start.elapsed())
+                println!("{:?}", start.elapsed());
+
+                let mut max = 0;
+                let mut min = 0;
+                for (index, &value) in data.iter().enumerate() {
+                    if max > value { max = value  }
+                    if min < value { min = value }
+                }
+                println!("Length of current frame: {:?}", data.len());
+
+                println!("Max amplitude: {:?}", max);
+                println!("Min amplitude: {:?}", min);
+
             }
         },
         |err| {
