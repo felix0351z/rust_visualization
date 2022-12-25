@@ -1,5 +1,5 @@
 use log::warn;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use super::errors::ApplicationError;
 
 use crate::engine::utils::{AudioBuffer, BufferInfo};
@@ -191,7 +191,7 @@ const DISPLAY_FRAME_RATE: u32 = 50;
         /// Get the current device
         fn current_device(&self) -> Result<&Device> {
             self.device.as_ref()
-                .ok_or(Err(ApplicationError::NoDeviceSelected)?)
+                .context(ApplicationError::NoDeviceSelected)
         }
 
         /// Get the default name for the input device.
