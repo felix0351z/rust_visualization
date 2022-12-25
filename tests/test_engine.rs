@@ -1,10 +1,9 @@
 use std::thread::sleep;
 use std::time::Duration;
 use visualization_test::engine::Engine;
-use visualization_test::engine::errors::{InputError, ProgramError};
 use visualization_test::engine::input::DeviceInfo;
 
-use error_stack::{Result, ResultExt};
+use anyhow::Result;
 const LEDS: usize = 60;
 
 
@@ -13,7 +12,7 @@ fn print_device(device: &DeviceInfo) {
 }
 
 #[test]
-fn test_available_devices() -> Result<(), InputError> {
+fn test_available_devices() -> Result<()> {
     let engine = Engine::new(LEDS);
     let devices = engine.get_available_devices();
 
@@ -32,7 +31,7 @@ fn test_available_devices() -> Result<(), InputError> {
 }
 
 #[test]
-fn test_set_device() -> Result<(), ProgramError>{
+fn test_set_device() -> Result<()>{
     let mut engine = Engine::new(LEDS);
     let devices = engine.get_available_devices();
 
@@ -50,8 +49,8 @@ fn test_set_device() -> Result<(), ProgramError>{
             Ok(())
 
 
-        } ,
-        Err(err) => Err(err.change_context(ProgramError::InputError)),
+        }
+        Err(err) =>Err(err),
     }
 
 
@@ -96,7 +95,7 @@ fn test_set_filter() {
 
 
 #[test]
-fn test_runtime() -> Result<(), ProgramError> {
+fn test_runtime() -> Result<()> {
     let mut engine = Engine::new(LEDS);
     engine.update_stream()?; //Start the stream!
 
@@ -105,14 +104,12 @@ fn test_runtime() -> Result<(), ProgramError> {
 }
 
 #[test]
-fn test_pause() -> Result<(), ProgramError> {
+fn test_pause() -> Result<()> {
     let mut engine = Engine::new(LEDS);
     engine.update_stream()?;
 
     sleep(Duration::from_secs(2));
-    engine.pause_stream()
-        .change_context(ProgramError::InputError)
-        ?;
+    engine.pause_stream()?;
     sleep(Duration::from_secs(2));
 
     Ok(())

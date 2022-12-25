@@ -5,16 +5,16 @@ use std::time::Duration;
 use visualization_test::engine::errors::SenderError;
 use visualization_test::engine::sender::Sender;
 
-use error_stack::Result;
+use anyhow::Result;
 
 #[test]
-fn test_creation() -> Result<(), SenderError> {
+fn test_creation() -> Result<()> {
     Sender::new()?;
     Ok(())
 }
 
 #[test]
-fn test_sync() -> Result<(), SenderError> {
+fn test_sync() -> Result<()> {
     let white: Vec<u8> = vec![255; 60*3];
     let black: Vec<u8> = vec![0; 60*3];
 
@@ -39,7 +39,7 @@ fn test_sync() -> Result<(), SenderError> {
 }
 
 #[test]
-fn test_async() -> Result<(), SenderError> {
+fn test_async() -> Result<()> {
     let sender = Sender::new()?;
     let sender2 = sender.clone()?;
     let sender3 = sender.clone()?;
